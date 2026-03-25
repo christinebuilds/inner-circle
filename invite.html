@@ -131,12 +131,6 @@
     .confirmed-msg .check { font-size: 32px; margin-bottom: 8px; }
     .confirmed-msg .msg { font-size: 15px; color: #10b981; font-weight: 600; }
     .confirmed-msg .sub { font-size: 13px; color: #888; margin-top: 4px; }
-    .confirmed-msg .sms-link {
-      display: inline-block; margin-top: 12px; padding: 10px 20px;
-      background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.1);
-      border-radius: 10px; color: #ccc; font-size: 14px; font-weight: 600;
-      text-decoration: none;
-    }
 
     .selected-hint {
       font-size: 12px; color: #555; text-align: center;
@@ -259,7 +253,6 @@
     const message = g('m', 'msg', '');
     const city = g('c', 'city', '');
     const duration = g('d', 'duration', '120');
-    const fromPhone = g('p', 'phone', '');
 
     const emojiMap = {
       dinner:'&#127860;',coffee:'&#9749;',drinks:'&#127867;',hike:'&#9968;',
@@ -464,15 +457,12 @@ Either way, draft a short, casual text I can send back to ${fromName} confirming
 
       const dayStr = fDay(sp);
       const timeStr = fTime(sp);
-      const smsBody = encodeURIComponent(`${dayStr} at ${timeStr} works for me! — ${friendName}`);
-      const smsHref = fromPhone ? `sms:${fromPhone}&body=${smsBody}` : `sms:&body=${smsBody}`;
 
       const msg = document.getElementById('confirmed-msg');
       msg.innerHTML = `
         <div class="check">&#10003;</div>
         <div class="msg">${dayStr} at ${timeStr} — locked in!</div>
-        <div class="sub">${fromName} will be notified.</div>
-        <a class="sms-link" href="${smsHref}">Also text ${fromName} to confirm</a>
+        <div class="sub">${fromName}'s agent will pick this up automatically. You're all set.</div>
       `;
       msg.classList.add('visible');
 
