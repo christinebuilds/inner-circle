@@ -445,36 +445,71 @@
       el.style.display = 'block';
     }
 
-    // Parse times — two formats:
-    // Long: t1=2026-03-27T18:30,2026-03-27T22:00,great
-    // Short: s=0327-1830-2200-g_0329-1100-1400-o  (MMDD-HHMM-HHMM-g/o, _ separated)
-    const times = [];
-    const shortTimes = params.get('s');
-    if (shortTimes) {
-      // Short format: MMDD-HHMM-HHMM-q joined by _
-      const year = new Date().getFullYear();
-      shortTimes.split('_').forEach(slot => {
-        const [mmdd, startHm, endHm, q] = slot.split('-');
-        const mo = mmdd.slice(0, 2);
-        const dd = mmdd.slice(2);
-        const sh = startHm.slice(0, 2);
-        const sm = startHm.slice(2);
-        const eh = endHm.slice(0, 2);
-        const em = endHm.slice(2);
-        times.push({
-          start: `${year}-${mo}-${dd}T${sh}:${sm}`,
-          end: `${year}-${mo}-${dd}T${eh}:${em}`,
-          quality: q === 'o' ? 'good' : 'great'
+    // Supabase config for live availability
+    const SUPABASE_URL = 'https://icknhfkfgeitbzgpomwh.supabase.co';
+    const SUPABASE_ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imlja25oZmtmZ2VpdGJ6Z3BvbXdoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQ0NzI1NDgsImV4cCI6MjA5MDA0ODU0OH0.WsP2N4wgfjyYp1ycdgL2B240z_rXkl0WJe9mjBYK7vk';
+
+    let times = [];
+
+    // Parse times from URL params (fallback)
+    function parseTimesFromParams() {
+      const shortTimes = params.get('s');
+      if (shortTimes) {
+        const year = new Date().getFullYear();
+        shortTimes.split('_').forEach(slot => {
+          const [mmdd, startHm, endHm, q] = slot.split('-');
+          times.push({
+            start: `${year}-${mmdd.slice(0,2)}-${mmdd.slice(2)}T${startHm.slice(0,2)}:${startHm.slice(2)}`,
+            end: `${year}-${mmdd.slice(0,2)}-${mmdd.slice(2)}T${endHm.slice(0,2)}:${endHm.slice(2)}`,
+            quality: q === 'o' ? 'good' : 'great'
+          });
         });
-      });
-    } else {
-      for (let i = 1; i <= 5; i++) {
-        const t = params.get('t' + i);
-        if (t) {
-          const [start, end, quality] = t.split(',');
-          times.push({ start, end, quality: quality || 'great' });
+      } else {
+        for (let i = 1; i <= 5; i++) {
+          const t = params.get('t' + i);
+          if (t) {
+            const [start, end, quality] = t.split(',');
+            times.push({ start, end, quality: quality || 'great' });
+          }
         }
       }
+    }
+
+    // Convert Supabase row to time object
+    function supabaseRowToTime(row) {
+      const [sh, sm] = row.start_time.split(':');
+      const [eh, em] = row.end_time.split(':');
+      return {
+        start: `${row.slot_date}T${sh}:${sm}`,
+        end: `${row.slot_date}T${eh}:${em}`,
+        quality: row.quality || 'great'
+      };
+    }
+
+    // Fetch live availability from Supabase, fall back to URL params
+    async function loadTimes() {
+      // If URL has explicit times, use those
+      if (params.get('s') || params.get('t1')) {
+        parseTimesFromParams();
+        renderTimes();
+        return;
+      }
+      // Otherwise fetch live from Supabase
+      try {
+        const today = new Date().toISOString().split('T')[0];
+        const res = await fetch(
+          `${SUPABASE_URL}/rest/v1/availability?select=slot_date,start_time,end_time,quality&slot_date=gte.${today}&order=slot_date.asc&limit=5`,
+          { headers: { 'apikey': SUPABASE_ANON } }
+        );
+        if (res.ok) {
+          const rows = await res.json();
+          if (rows.length > 0) {
+            times = rows.map(supabaseRowToTime);
+          }
+        }
+      } catch (e) { /* silently fall back */ }
+      if (times.length === 0) parseTimesFromParams();
+      renderTimes();
     }
 
     // Manual date parsing — works on every browser
@@ -503,6 +538,7 @@
     let selectedIndex = -1;
     const timesList = document.getElementById('times-list');
 
+    function renderTimes() {
     if (times.length > 0) {
       times.forEach((t, idx) => {
         const sp = parseParts(t.start);
@@ -533,6 +569,8 @@
     } else {
       timesList.innerHTML = '<li style="cursor:default;justify-content:center"><span class="time">Times coming via text</span></li>';
     }
+    updateAgentCommand();
+    } // end renderTimes
 
     // Build agent prompt
     function buildAgentCommand() {
@@ -564,7 +602,8 @@ Please check my calendar for conflicts with these times and help me pick the bes
       document.getElementById('copy-box').textContent = buildAgentCommand();
     }
 
-    updateAgentCommand();
+    // Load times (from Supabase or URL params) and render
+    loadTimes();
 
     function copyCommand() {
       const box = document.getElementById('copy-box');
