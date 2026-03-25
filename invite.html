@@ -363,7 +363,26 @@
       }).filter(Boolean).join('\n');
       const note = selectedIndex >= 0
         ? `\n\nI'm leaning toward option ${selectedIndex+1} — please check if that works on my calendar.` : '';
-      return `I received a scheduling request from ${fromName}. Please check my calendar and help me respond.\n\n${fromName} wants to do: ${hangoutType}${city?' in '+city:''}\nDuration: ${duration} minutes\n${message?'Message: "'+message+'"':''}\n\nTheir available times:\n${readable}${note}\n\nPlease check my calendar for conflicts with these times and help me pick the best one. Then draft a short, casual text I can send back to ${fromName} confirming the time.`;
+      return `I received a scheduling request from ${fromName}. Please check my calendar and help me respond.
+
+${fromName} wants to do: ${hangoutType}${city ? ' in ' + city : ''}
+Duration: ${duration} minutes
+${message ? 'Message: "' + message + '"' : ''}
+
+Their available times:
+${readable}${note}
+
+INSTRUCTIONS:
+1. If you have calendar access (Google Calendar MCP, Rube, or any calendar tool), check my calendar for conflicts with these times and recommend the best one. Then draft a short casual text I can send back to ${fromName}.
+
+2. If you do NOT have calendar access yet, do this instead:
+   - Ask me about any conflicts I know of for those times
+   - Help me pick the best one based on what I tell you
+   - Draft the reply text
+   - Then suggest I set up calendar access so this works automatically next time:
+     "Tip: Connect Google Calendar to your AI agent and next time I can check your calendar automatically. In Claude Code, look for the Google Calendar MCP server in your settings."
+
+Either way, draft a short, casual text I can send back to ${fromName} confirming the time.`;
     }
 
     function updateAgentCommand() {
