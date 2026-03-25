@@ -117,6 +117,26 @@
     }
     .text-back-btn:active { transform: scale(0.97); }
     .text-back-btn.visible { display: block; }
+    .text-back-btn.confirmed {
+      background: linear-gradient(135deg, #059669, #10b981);
+      box-shadow: 0 4px 24px rgba(16,185,129,0.4);
+    }
+
+    .confirmed-msg {
+      display: none; text-align: center; margin-top: 16px;
+      padding: 16px; background: rgba(16,185,129,0.1);
+      border: 1px solid rgba(16,185,129,0.2); border-radius: 12px;
+    }
+    .confirmed-msg.visible { display: block; }
+    .confirmed-msg .check { font-size: 32px; margin-bottom: 8px; }
+    .confirmed-msg .msg { font-size: 15px; color: #10b981; font-weight: 600; }
+    .confirmed-msg .sub { font-size: 13px; color: #888; margin-top: 4px; }
+    .confirmed-msg .sms-link {
+      display: inline-block; margin-top: 12px; padding: 10px 20px;
+      background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.1);
+      border-radius: 10px; color: #ccc; font-size: 14px; font-weight: 600;
+      text-decoration: none;
+    }
 
     .selected-hint {
       font-size: 12px; color: #555; text-align: center;
@@ -204,8 +224,9 @@
 
       <ul class="times-list" id="times-list"></ul>
 
-      <a class="text-back-btn" id="text-back-btn" href="#">Text back</a>
+      <button class="text-back-btn" id="confirm-btn" onclick="confirmTime()">Confirm</button>
       <div class="selected-hint" id="selected-hint">Tap a time</div>
+      <div class="confirmed-msg" id="confirmed-msg"></div>
     </div>
 
     <div class="agent-section">
@@ -340,13 +361,14 @@
           selectedDayStr = dayStr;
           selectedTimeStr = fTime(sp);
 
-          // Show the text-back button
-          const btn = document.getElementById('text-back-btn');
-          const smsBody = encodeURIComponent(`${dayStr} at ${fTime(sp)} works for me!`);
-          btn.href = fromPhone ? `sms:${fromPhone}&body=${smsBody}` : `sms:&body=${smsBody}`;
-          btn.textContent = `Text ${fromName}: "${dayStr} at ${fTime(sp)} works!"`;
+          // Show confirm button
+          const btn = document.getElementById('confirm-btn');
+          btn.textContent = `Confirm ${dayStr} at ${fTime(sp)}`;
           btn.classList.add('visible');
+          btn.classList.remove('confirmed');
 
+          // Hide any previous confirmation
+          document.getElementById('confirmed-msg').classList.remove('visible');
           document.getElementById('selected-hint').textContent = '';
           updateAgentCommand();
         });
@@ -403,6 +425,61 @@ Either way, draft a short, casual text I can send back to ${fromName} confirming
         btn.textContent = 'Copied! Paste into your AI agent';
         btn.classList.add('copied');
         setTimeout(() => { btn.textContent = 'Copy prompt to clipboard'; btn.classList.remove('copied'); }, 3000);
+      });
+    }
+
+    async function confirmTime() {
+      if (selectedIndex < 0) return;
+      const t = times[selectedIndex];
+      const sp = p(t.start), ep = p(t.end);
+      if (!sp || !ep) return;
+
+      const btn = document.getElementById('confirm-btn');
+      btn.textContent = 'Confirming...';
+
+      // Ask for their name
+      const friendName = prompt('What\'s your name?') || 'A friend';
+
+      // Save to Supabase
+      try {
+        await fetch(`${SUPABASE_URL}/rest/v1/responses`, {
+          method: 'POST',
+          headers: {
+            'apikey': SUPABASE_ANON,
+            'Content-Type': 'application/json',
+            'Prefer': 'return=minimal'
+          },
+          body: JSON.stringify({
+            friend_name: friendName,
+            slot_date: t.start.split('T')[0],
+            start_time: `${String(sp.h).padStart(2,'0')}:${String(sp.mi).padStart(2,'0')}:00`,
+            end_time: `${String(ep.h).padStart(2,'0')}:${String(ep.mi).padStart(2,'0')}:00`
+          })
+        });
+      } catch(e) { /* still show confirmation even if save fails */ }
+
+      // Show confirmation
+      btn.textContent = 'Confirmed!';
+      btn.classList.add('confirmed');
+
+      const dayStr = fDay(sp);
+      const timeStr = fTime(sp);
+      const smsBody = encodeURIComponent(`${dayStr} at ${timeStr} works for me! — ${friendName}`);
+      const smsHref = fromPhone ? `sms:${fromPhone}&body=${smsBody}` : `sms:&body=${smsBody}`;
+
+      const msg = document.getElementById('confirmed-msg');
+      msg.innerHTML = `
+        <div class="check">&#10003;</div>
+        <div class="msg">${dayStr} at ${timeStr} — locked in!</div>
+        <div class="sub">${fromName} will be notified.</div>
+        <a class="sms-link" href="${smsHref}">Also text ${fromName} to confirm</a>
+      `;
+      msg.classList.add('visible');
+
+      // Disable further clicks
+      timesList.querySelectorAll('li').forEach(el => {
+        el.style.pointerEvents = 'none';
+        if (!el.classList.contains('selected')) el.style.opacity = '0.3';
       });
     }
 
