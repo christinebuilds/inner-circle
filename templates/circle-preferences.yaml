@@ -1,0 +1,21 @@
+# Inner Circle — Preferences
+#
+# Optional config for /inner-circle.
+# Put this file at: ~/Coding/notes/projects/inner-circle/preferences.yaml
+
+# How your outreach messages should sound
+tone: casual  # casual | warm | funny
+
+# When you're typically free to hang out
+availability: "weekday evenings and weekends"
+
+# Where you're based (for suggesting meetup spots)
+location: "San Francisco"
+neighborhood: "Mission / Castro"
+
+# Favorite default spots to suggest
+spots:
+  coffee: "Sightglass"
+  hike: "Lands End"
+  dinner: "pick a spot in the Mission"
+  drinks: "ABV"

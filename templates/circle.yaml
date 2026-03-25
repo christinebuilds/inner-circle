@@ -1,0 +1,57 @@
+# Inner Circle — Your People
+#
+# This is the list of friends /inner-circle checks on.
+# Put this file at: ~/Coding/notes/projects/inner-circle/circle.yaml
+#
+# Tiers:
+#   ride-or-die  — Your absolute closest. Flagged prominently if overdue.
+#   close        — Real friends you actively want in your life.
+#   keep-warm    — People you care about but see less often.
+#
+# Cadence is in days — how often you ideally see or talk to this person.
+# preferred_contact: text | email | call | voice-memo
+
+circle:
+  # — Ride or die —
+  - name: "Best Friend"
+    phone: "+1-555-0101"
+    email: "bestie@example.com"
+    cadence: 7
+    last_seen: "2026-03-01"
+    preferred_contact: "text"
+    vibe: "Down for anything. Usually free weekends. Loves trying new restaurants."
+    tier: ride-or-die
+
+  # — Close friends —
+  - name: "College Friend"
+    phone: "+1-555-0202"
+    cadence: 14
+    last_seen: "2026-02-15"
+    preferred_contact: "text"
+    vibe: "Works in tech. Likes hiking and board games. Lives in the Mission."
+    tier: close
+
+  - name: "Work Friend"
+    email: "workfriend@example.com"
+    cadence: 21
+    last_seen: "2026-02-20"
+    preferred_contact: "email"
+    vibe: "Left the company but stayed close. Into running and podcasts."
+    tier: close
+
+  # — Keep warm —
+  - name: "Long Distance Friend"
+    email: "faraway@example.com"
+    cadence: 45
+    last_seen: "2026-01-10"
+    preferred_contact: "email"
+    vibe: "Lives in NYC. Video calls work best. Always has good book recs."
+    tier: keep-warm
+
+  - name: "Old Roommate"
+    phone: "+1-555-0303"
+    cadence: 60
+    last_seen: "2025-12-25"
+    preferred_contact: "text"
+    vibe: "Moved to Portland. Catch up a few times a year. Loves dogs."
+    tier: keep-warm
